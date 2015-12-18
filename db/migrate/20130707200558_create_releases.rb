@@ -10,7 +10,7 @@ class CreateReleases < ActiveRecord::Migration
       t.string   :url, :minimum_os_version, :bundle_display_name, :bundle_version, :github_etag, :bundle_identifier
       t.boolean  :enterprise, :ipad_only, :armv6, :armv7, :armv7s
       t.string   :fatal_errors, :md5, array: true
-      t.hstore   :capabilities
+      t.string   :capabilities
       t.datetime :expiration_date
       t.timestamps
     end

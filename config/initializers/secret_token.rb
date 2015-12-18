@@ -12,5 +12,5 @@
 
 # This file is under the .gitignore
 
-TestHub::Application.config.secret_key_base = '' 
+TestHub::Application.config.secret_key_base = 'a1eed332a93478fa28d127331e51e12d0a47cd718d5b046d7033d176f210368becbd71bd7068bbc81b3059d40eae13b38557407ed29e925e16a0cd029c869bc8' 
 raise ArgumentError, 'a secret_key is required in /config/initializers/secret_token.rb:15' unless TestHub::Application.config.secret_key_base.present?

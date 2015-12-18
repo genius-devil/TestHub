@@ -74,8 +74,8 @@ xptCVeN2pjbdt9uzi175oVo/u6B2ArKAW17u6XEHIdDMOe7cb33peVI6TD15W4MI
 pyQPbp8orlXe+tA8JA==
 -----END CERTIFICATE-----"
 
-AppleDeviceX509Store = OpenSSL::X509::Store.new
-AppleDeviceX509Store.add_cert AppleRootCA
-AppleDeviceX509Store.add_cert AppleIPhoneCA
-AppleDeviceX509Store.add_cert AppleIPhoneDeviceCA
-AppleDeviceX509Store.add_cert ProfileServiceCert
+#AppleDeviceX509Store = OpenSSL::X509::Store.new
+#AppleDeviceX509Store.add_cert AppleRootCA
+#AppleDeviceX509Store.add_cert AppleIPhoneCA
+#AppleDeviceX509Store.add_cert AppleIPhoneDeviceCA
+#AppleDeviceX509Store.add_cert ProfileServiceCert

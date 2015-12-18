@@ -3,7 +3,7 @@ class CreateAccessTokens < ActiveRecord::Migration
     create_table :access_tokens do |t|
       t.binary   :token, :refresh_token
       t.datetime :expires_at
-      t.hstore   :options
+      t.string   :options
       t.timestamps
     end
   end

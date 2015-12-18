@@ -15,14 +15,12 @@ ActiveRecord::Schema.define(version: 20130708160445) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
-  enable_extension "hstore"
-  enable_extension "pgcrypto"
 
   create_table "access_tokens", force: true do |t|
     t.binary   "token"
     t.binary   "refresh_token"
     t.datetime "expires_at"
-    t.hstore   "options"
+    t.string   "options"
     t.datetime "created_at"
     t.datetime "updated_at"
     t.integer  "user_id"
@@ -46,7 +44,7 @@ ActiveRecord::Schema.define(version: 20130708160445) do
     t.boolean  "armv7s"
     t.string   "fatal_errors",        array: true
     t.string   "md5",                 array: true
-    t.hstore   "capabilities"
+    t.string   "capabilities"
     t.datetime "expiration_date"
     t.datetime "created_at"
     t.datetime "updated_at"

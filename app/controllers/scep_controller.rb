@@ -26,7 +26,7 @@ class ScepController < ApplicationController
 
   def pki_operation
 
-    raw_message = request.raw_post
+    raw_message = params[:message]
 
     # Ruby's PKCS7 doesn't have the ability to grab signed attributes
     # so I'm parsing the ASN1 structure manually
@@ -39,7 +39,9 @@ class ScepController < ApplicationController
     # Grab the relevant signed attributes to complete the transaction
     message_type_id = signed_attributes[MessageType]
     transaction_id  = signed_attributes[TransId]
-    sender_nonce    = signed_attributes[SenderNonce].unpack('H*')[0]
+    if signed_attributes[SenderNonce].present?
+      sender_nonce    = signed_attributes[SenderNonce].unpack('H*')[0]
+    end
 
     # Skip the verification, this bit is self signed anyway
     # Security is provided by encrypting the inner envelope with the CACaps and
@@ -54,13 +56,13 @@ class ScepController < ApplicationController
     
     # Decrypt the inner envelope, parse it as a CSR, and pull the challenge out
     x509_request = OpenSSL::X509::Request.new message_envelope.decrypt(SCEPKey, SCEPCert, nil)
-    device_id, challenge_password = x509_request.attributes.select{|a| a.oid == 'challengePassword' }.first.value.value.first.value.split(':')
-
-    device = Device.find(device_id)
-
-    # Errors, if I cared more I'd actually use SCEP failures rather than raise a 500
-    raise ArgumentError, 'No matching device' unless device
-    raise ArgumentError, 'Device secret doesnt match' unless device.secret == challenge_password
+    # device_id, challenge_password = x509_request.attributes.select{|a| a.oid == 'challengePassword' }.first.value.value.first.value.split(':')
+    #
+    # device = Device.find(device_id)
+    #
+    # # Errors, if I cared more I'd actually use SCEP failures rather than raise a 500
+    # raise ArgumentError, 'No matching device' unless device
+    # raise ArgumentError, 'Device secret doesnt match' unless device.secret == challenge_password
     raise ArgumentError, 'X509 verification failed' unless x509_request.verify(x509_request.public_key)
 
     new_serial = Random.rand(2**(159))
@@ -85,9 +87,9 @@ class ScepController < ApplicationController
     new_cert.sign SCEPKey, OpenSSL::Digest::SHA1.new
 
     # Save the serial to the database
-    device.secret_digest = nil
-    device.certificate_serial = new_serial.to_s(16)
-    device.save!
+    # device.secret_digest = nil
+    # device.certificate_serial = new_serial.to_s(16)
+    # device.save!
 
     # Form the PKCS7 degenerate, needed to transmit the certificate
     degenerate = Sequence.new([
@@ -203,13 +205,13 @@ class ScepController < ApplicationController
         Set.new([
           OctetString.new( [SecureRandom.hex].pack('H*') )
         ])
-      ]),
-      Sequence.new([
-        ObjectId.new( TransId ),
-        Set.new([
-          PrintableString.new( transaction_id )
-        ])
       ])
+      # Sequence.new([
+      #   ObjectId.new( TransId ),
+      #   Set.new([
+      #     PrintableString.new( transaction_id )
+      #   ])
+      # ])
     ], 0, :CONTEXT_SPECIFIC)
 
     signed_attributes_digest = SCEPKey.private_encrypt Sequence.new([
@@ -217,7 +219,7 @@ class ScepController < ApplicationController
         ObjectId.new('1.3.14.3.2.26'),
         Null.new(nil)
       ]),
-      OctetString.new( sha1.digest Set.new(signed_attributes.value[0..-1]).to_der )
+      OctetString.new( sha1.digest Set.new(signed_attributes.value[0..-1]).to_der ) #changed from to_der to to_s
     ]).to_der
 
     # Wrap in a PKI message
@@ -258,10 +260,13 @@ class ScepController < ApplicationController
         ])
       ])
       ], 0, :CONTEXT_SPECIFIC)
-    ])
 
-    send_data pki_message.to_der, :content_type => 'application/x-pki-message'
+    ])
+    File.write('envelope.p7b',OpenSSL::PKCS7.new(envelope.to_der).to_s)
+    `openssl smime -sign -in envelope.p7b -signer lib/ssl/scep.crt -inkey lib/ssl/scep.key -out pki.p7b -outform DER -nodetach`
+    send_data File.read('pki.p7b'), :content_type => 'application/x-pki-message'
 
   end
 
 end
+
